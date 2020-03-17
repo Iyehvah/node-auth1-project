@@ -2,6 +2,7 @@ const express = require("express")
 const Users = require("../users/users-model")
 const bcrypt = require("bcryptjs")
 const router = express.Router()
+const { restrict , sessions } = require("../middleware/restrict")
 
 router.post("/register", async (req, res, next) => {
     try {
@@ -36,6 +37,10 @@ router.post("/login", async (req, res, next) => {
                 message: "Invalid Credentials",
             })
         }
+
+        const authToken = Math.random()
+        sessions[authToken] = user.id
+        res.setHeader("Set-Cookie", `token=${authToken}; path=/`)
         
         res.json({
             message: `Welcome ${user.username}`,
@@ -44,6 +49,10 @@ router.post("/login", async (req, res, next) => {
     } catch(error) {
         next(error)
     }
+})
+
+router.get("/logout", restrict(), (req, res, next) => {
+    res.end()
 })
 
 module.exports = router
