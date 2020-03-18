@@ -25,11 +25,8 @@ router.post("/register", async (req, res, next) => {
 
 router.post("/login", async (req, res, next) => {
     try {
-        //when a user sends this request after hitting the log in! button it will grab the username AND password out of the boxes here
         const { username, password } = req.body
-        //AGAIN searching our database for that USERNAME
         const user = await Users.findBy({username}).first()
-        //Creating a function to compare the password hash created by the user and the password hash in our database
         const passwordValidation = await bcrypt.compare(password, user.password)
 
         if(!user || !passwordValidation) {
@@ -38,10 +35,7 @@ router.post("/login", async (req, res, next) => {
             })
         }
 
-        const authToken = Math.random()
-        sessions[authToken] = user.id
-        res.setHeader("Set-Cookie", `token=${authToken}; path=/`)
-        
+        req.session.user = user
         res.json({
             message: `Welcome ${user.username}`,
         })
@@ -52,7 +46,15 @@ router.post("/login", async (req, res, next) => {
 })
 
 router.get("/logout", restrict(), (req, res, next) => {
-    res.end()
+	req.session.destroy((error) => {
+		if (error) {
+			next(error)
+		} else {
+			res.json({
+				message: "Logged out successfully!"
+			})
+		}
+	})
 })
 
 module.exports = router
